@@ -1,6 +1,6 @@
 # Ethica IV
 
-A small Lean 4 project inspired by Spinoza’s *Ethics*, Part IV. It asks what connects an agent’s recognition of a rule to the action it selects and to the effect the system ultimately permits.
+In Part IV of the *Ethics*, Spinoza asks how knowledge of good and evil can influence human action. This Lean 4 project reconstructs part of his argument and explores a modern analogy: what makes a rule govern an AI agent’s choice or constrain what the system allows it to do?
 
 ## The connection to Spinoza
 
