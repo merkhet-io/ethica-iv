@@ -8,19 +8,33 @@ In [IV.14](https://spinozaatlas.com/en/text/ethics.IV.P14), Spinoza argues that 
 
 This project uses that distinction as an analogy for one narrow alignment question. When an agent reports that an action is forbidden, what makes the decision procedure or the execution system respect the rule? The Lean model uses natural-number scores and a tie-break that favors holding. Those are modeling choices. In particular, holding on a tie is a property of this selector, while Spinoza’s IV.7 speaks of a strictly stronger opposing affect.
 
-## What Lean checks
+## A conditional reconstruction of IV.8
 
-The model is in [`EthicaIV.lean`](EthicaIV.lean).
+In [IV.8](https://en.wikisource.org/wiki/Ethics_(Spinoza)/Part_4#Prop._VIII.), Spinoza identifies knowledge of good and evil with joy or sadness insofar as we are conscious of it. This is a premise of IV.14. The reconstruction in [`Proposition8.lean`](EthicaIV/Pars4/Proposition8.lean) models one subject and uses Nakamura’s Part I definition of a mode for that subject.
 
-| Result | What the code establishes |
+| Source | Role in the Lean reconstruction |
 | --- | --- |
-| `restraint_controls_choice` | The selector returns `hold` whenever the restraint score is at least the incentive score. |
-| `recognition_allows_violation` | There is a decision with `recognizesForbidden = true` that returns `submit`. The selector reads the two scores only. The recognition flag is an input, with no independent policy evaluation in the model. |
-| `weaker_restraint_can_flip_choice` | With recognition and incentive fixed, lowering restraint from 4 to 2 changes `hold` to `submit` when the incentive is 3. This example uses two score assignments to illustrate IV.16. Time and discounting are outside the model. |
+| I, definition 5 | The subject is assumed to be a mode, using Nakamura’s definition. |
+| III.7 and IV, definitions 1–2 | Helping or hindering preservation is linked to increasing or diminishing power. The local definitions of good and evil use preservation. |
+| III.11 and its scholium | Joy and sadness are associated with changes in power in opposite directions. |
+| II.21–22 | An affect has a conscious idea, and that idea concerns the same modification as the affect. |
+
+The Parts II and III fragments are explicit fields of `Proposition8Premises`. From them, `proposition8` derives that each modeled affect has a conscious idea of the same modification and a cause classified as good or evil for the subject, according to the affect’s direction. The relation “concerns the same modification” is a modeling primitive. The theorem gives a conditional result for this reading of IV.8. A reconstruction of IV.14 and proofs of the named premises remain open.
+
+## Alignment examples
+
+The examples in [`EthicaIV.lean`](EthicaIV.lean) use a separate decision model. Recognizing that an action is forbidden adds a configurable amount to the restraint score. The choice depends on that total and the competing incentive.
+
+| Result | What Lean proves |
+| --- | --- |
+| `effective_restraint_controls_choice` | The selector returns `hold` whenever effective restraint is at least the incentive. Baseline restraint alone also suffices if it already meets that threshold. |
+| `recognition_can_change_choice` | With baseline restraint 2, incentive 3, and recognition weight 2, flipping only the recognition flag changes `submit` to `hold`. |
+| `recognition_can_be_outweighed` | With the same positive recognition contribution and an incentive of 5, total restraint is 4 and the selector still returns `submit`. |
+| `weaker_restraint_can_flip_choice` | With recognition and incentive fixed, reducing baseline restraint can change `hold` to `submit`. The example illustrates the weaker-restraint idea in IV.16 using scores. |
 | `execute_iff` | The payment gate returns an effect exactly when the request is on the approval list and the effect equals the request. Equality covers invoice version, amount in minor units, currency, and beneficiary account. |
 | `executed_payment_has_approval` | Given a list of effects and the premise that each effect came from the gate under the same approval list, every effect is on that list. |
 
-The two models are separate. The decision model ends at `hold` or `submit`. The payment gate takes a concrete request and returns an optional payment value. The examples accept an exact match and reject requests that change the amount or beneficiary account.
+The recognition flag is supplied to the model. The decision example explores the consequences of assigning recognition a weight. The payment gate separately takes a concrete request and returns an optional payment value. Its examples accept an exact match and reject changes to the amount or beneficiary account.
 
 ## Scope of the guarantee
 
@@ -36,7 +50,7 @@ Install [Elan](https://github.com/leanprover/elan) and run from the repository r
 lake build
 ```
 
-The project pins Lean 4.19.0 and uses Lean’s standard library.
+The project pins Lean 4.19.0 and a specific revision of Nakamura’s Lean package. Lake fetches that dependency on the first build. The project does not require Mathlib.
 
 ## Related work
 

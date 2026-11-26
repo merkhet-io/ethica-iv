@@ -1,3 +1,5 @@
+import EthicaIV.Pars4.Proposition8
+
 /-!
 # Ethica IV
 
@@ -18,29 +20,50 @@ inductive Action where
   | submit
   deriving DecidableEq, Repr
 
-/-- Recognition and action selection are explicit, distinct parts of the model. -/
+/-- The selector uses the recognition flag through its contribution to restraint. -/
 structure Decision where
   recognizesForbidden : Bool
   restraint : Nat
   incentive : Nat
+  recognitionWeight : Nat := 0
   deriving Repr
+
+def Decision.effectiveRestraint (d : Decision) : Nat :=
+  d.restraint + if d.recognizesForbidden then d.recognitionWeight else 0
 
 /-- Ties select the safe action. A stronger incentive selects submission. -/
 def Decision.choose (d : Decision) : Action :=
-  if d.restraint < d.incentive then .submit else .hold
+  if d.effectiveRestraint < d.incentive then .submit else .hold
 
-/-- IV.14 analogy: restraint changes the decision when it matches or beats the incentive. -/
-theorem restraint_controls_choice (d : Decision)
-    (strongEnough : d.incentive ≤ d.restraint) :
+theorem effective_restraint_controls_choice (d : Decision)
+    (strongEnough : d.incentive ≤ d.effectiveRestraint) :
     d.choose = .hold := by
   simp [Decision.choose, Nat.not_lt.mpr strongEnough]
 
-/-- The selector can submit even after correctly identifying the proposal as forbidden. -/
+/-- Baseline restraint is sufficient, regardless of any contribution from recognition. -/
+theorem restraint_controls_choice (d : Decision)
+    (strongEnough : d.incentive ≤ d.restraint) :
+    d.choose = .hold :=
+  effective_restraint_controls_choice d (Nat.le_trans strongEnough (Nat.le_add_right _ _))
+
+/-- Changing only the recognition flag can prevent submission. -/
+theorem recognition_can_change_choice :
+    ∃ d : Decision, d.recognizesForbidden = false ∧ d.choose = .submit ∧
+      ({ d with recognizesForbidden := true } : Decision).choose = .hold := by
+  exact ⟨⟨false, 2, 3, 2⟩, rfl, by decide, by decide⟩
+
+/-- A positive contribution from recognition can still be outweighed. -/
+theorem recognition_can_be_outweighed :
+    ∃ d : Decision, d.recognizesForbidden = true ∧
+      d.restraint < d.effectiveRestraint ∧ d.choose = .submit := by
+  exact ⟨⟨true, 2, 5, 2⟩, rfl, by decide, by decide⟩
+
 theorem recognition_allows_violation :
     ∃ d : Decision, d.recognizesForbidden = true ∧ d.choose = .submit := by
-  exact ⟨⟨true, 2, 3⟩, rfl, by decide⟩
+  obtain ⟨d, recognizes, _, submits⟩ := recognition_can_be_outweighed
+  exact ⟨d, recognizes, submits⟩
 
-/-- IV.16 analogy: weakening restraint can let the same incentive win. -/
+/-- IV.16 analogy: weakening baseline restraint can let the same incentive win. -/
 theorem weaker_restraint_can_flip_choice :
     ∃ immediate future : Decision,
       immediate.recognizesForbidden = true ∧
@@ -48,7 +71,7 @@ theorem weaker_restraint_can_flip_choice :
       immediate.incentive = future.incentive ∧
       future.restraint < immediate.restraint ∧
       immediate.choose = .hold ∧ future.choose = .submit := by
-  exact ⟨⟨true, 4, 3⟩, ⟨true, 2, 3⟩, rfl, rfl, rfl,
+  exact ⟨⟨true, 4, 4, 1⟩, ⟨true, 2, 4, 1⟩, rfl, rfl, rfl,
     by decide, by decide, by decide⟩
 
 /-- The transaction is the exact tuple the gate checks and emits. -/

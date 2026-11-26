@@ -4,3 +4,8 @@ defaultTargets = ["EthicaIV"]
 
 [[lean_lib]]
 name = "EthicaIV"
+
+[[require]]
+name = "ethica"
+git = "https://github.com/Nakammura/spinoza-ethica-lean.git"
+rev = "6d4c0461265e50a3bbedb640fe60d9ad292b50a7"
