@@ -1,0 +1,6 @@
+name = "ethica-iv"
+version = "0.1.0"
+defaultTargets = ["EthicaIV"]
+
+[[lean_lib]]
+name = "EthicaIV"
