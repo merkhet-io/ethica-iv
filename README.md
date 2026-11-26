@@ -31,16 +31,19 @@ The examples in [`EthicaIV.lean`](EthicaIV.lean) use a separate decision model. 
 | `recognition_can_change_choice` | With baseline restraint 2, incentive 3, and recognition weight 2, flipping only the recognition flag changes `submit` to `hold`. |
 | `recognition_can_be_outweighed` | With the same positive recognition contribution and an incentive of 5, total restraint is 4 and the selector still returns `submit`. |
 | `weaker_restraint_can_flip_choice` | With recognition and incentive fixed, reducing baseline restraint can change `hold` to `submit`. The example illustrates the weaker-restraint idea in IV.16 using scores. |
-| `execute_iff` | The payment gate returns an effect exactly when the request is on the approval list and the effect equals the request. Equality covers invoice version, amount in minor units, currency, and beneficiary account. |
-| `executed_payment_has_approval` | Given a list of effects and the premise that each effect came from the gate under the same approval list, every effect is on that list. |
 
-The recognition flag is supplied to the model. The decision example explores the consequences of assigning recognition a weight. The payment gate separately takes a concrete request and returns an optional payment value. Its examples accept an exact match and reject changes to the amount or beneficiary account.
+The recognition flag is supplied to the model. The decision example explores what follows from assigning recognition a weight.
 
-## Scope of the guarantee
+## Authorization of effects
 
-The gate treats its approval list as a trusted snapshot. The proof assumes **complete mediation**, meaning every effect under consideration came from a successful gate call. In a deployment, establishing that premise would require connecting the gate output to the payment actually recorded by the payment system. Approval issuance, expiry, revocation, replay protection, and the ERP integration are outside the current model.
+The system can also check the effects an agent proposes. The model takes an arbitrary effect type and a policy expressed as a decidable predicate. The check returns the exact proposed effect when the policy authorizes it.
 
-The result is a conditional guarantee about approval matching. The philosophical claims about human affects and the broader alignment of any AI system remain outside its scope.
+| Result | What Lean proves |
+| --- | --- |
+| `permit_iff` | The check returns an effect exactly when the proposal satisfies the policy and the returned effect equals the proposal. |
+| `observed_effect_is_authorized` | If each observed effect came from a successful check under the same policy, every observed effect satisfies that policy. |
+
+The second result assumes **complete mediation**. In a real system this means every way of producing the effect goes through the check and the system produces the exact effect that was checked. The result is relative to the supplied policy. Whether that policy captures what we want is a separate question.
 
 ## Build
 

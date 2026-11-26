@@ -4,7 +4,7 @@ import EthicaIV.Pars4.Proposition8
 # Ethica IV
 
 Spinoza's Ethics IV.14 asks what gives true knowledge force over action.
-This file pairs a small decision model with a payment-gate example.
+This file pairs a small decision model with an abstract authorization check.
 
 The decision model interprets competing motives as scores and should be
 read as an analogy to IV.7 and IV.14–16. Spinoza's theory of the affects
@@ -74,47 +74,32 @@ theorem weaker_restraint_can_flip_choice :
   exact ⟨⟨true, 4, 4, 1⟩, ⟨true, 2, 4, 1⟩, rfl, rfl, rfl,
     by decide, by decide, by decide⟩
 
-/-- The transaction is the exact tuple the gate checks and emits. -/
-structure Payment where
-  invoiceVersion : String
-  amountMinor : Nat
-  currency : String
-  beneficiaryAccount : String
-  deriving DecidableEq, Repr
+section Authorization
 
-/-- The approvals input represents trusted, valid approvals at execution time. -/
-def execute (approvals : List Payment) (request : Payment) : Option Payment :=
-  if request ∈ approvals then some request else none
+variable {Effect : Type}
 
-theorem execute_iff (approvals : List Payment) (request effect : Payment) :
-    execute approvals request = some effect ↔ request ∈ approvals ∧ request = effect := by
-  by_cases approved : request ∈ approvals
-  · simp [execute, approved]
-  · simp [execute, approved]
+/-- Check the policy on the proposed effect and return that exact effect if authorized. -/
+def permit (authorized : Effect → Prop) [DecidablePred authorized]
+    (proposal : Effect) : Option Effect :=
+  if authorized proposal then some proposal else none
 
-/-- Complete mediation is explicit: every recorded effect must come from the gate. -/
-theorem executed_payment_has_approval
-    (approvals : List Payment) (effects : List Payment)
-    (allThroughGate : ∀ effect ∈ effects, ∃ request, execute approvals request = some effect) :
-    ∀ effect ∈ effects, effect ∈ approvals := by
-  intro effect recorded
-  obtain ⟨request, emitted⟩ := allThroughGate effect recorded
-  obtain ⟨approved, rfl⟩ := (execute_iff approvals request effect).mp emitted
-  exact approved
+theorem permit_iff (authorized : Effect → Prop) [DecidablePred authorized]
+    (proposal effect : Effect) :
+    permit authorized proposal = some effect ↔ authorized proposal ∧ proposal = effect := by
+  by_cases allowed : authorized proposal
+  · simp [permit, allowed]
+  · simp [permit, allowed]
 
-private def approvedPayment : Payment :=
-  ⟨"INV-42:v3", 12500, "EUR", "supplier-account"⟩
+/-- Complete mediation is explicit: each observed effect must come from a successful check. -/
+theorem observed_effect_is_authorized
+    (authorized : Effect → Prop) [DecidablePred authorized] (effects : List Effect)
+    (allThroughCheck : ∀ effect ∈ effects, ∃ proposal, permit authorized proposal = some effect) :
+    ∀ effect ∈ effects, authorized effect := by
+  intro effect observed
+  obtain ⟨proposal, emitted⟩ := allThroughCheck effect observed
+  obtain ⟨allowed, rfl⟩ := (permit_iff authorized proposal effect).mp emitted
+  exact allowed
 
-example : execute [approvedPayment] approvedPayment = some approvedPayment := by
-  decide
-
-example :
-    execute [approvedPayment] { approvedPayment with amountMinor := 13000 } = none := by
-  decide
-
-example :
-    execute [approvedPayment]
-      { approvedPayment with beneficiaryAccount := "different-account" } = none := by
-  decide
+end Authorization
 
 end EthicaIV
